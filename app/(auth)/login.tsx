@@ -1,9 +1,10 @@
 import API_URL from '@/server_ip';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { createStyles } from '../../styles/auth.styles';
+import {io, Socket } from "socket.io-client";
 
 export default function Login() {
 
@@ -11,11 +12,12 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const styles = createStyles();
   const router = useRouter();
+  const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
     const checkUserId = async () => {
-      const id = await AsyncStorage.getItem('usuari_id');
-      console.log('pepe', id)
+      const id = await AsyncStorage.getItem('usuario_id');
+      console.log('USUARIO CONECTADO CON ID: ', id)
       if (id) {
         router.replace('/discover');
       }
@@ -39,7 +41,16 @@ export default function Login() {
         return response.json();
     })
     .then(async data => {
-      await AsyncStorage.setItem('usuario_id', String(data.usuario_id));
+      socketRef.current = io(`${API_URL}`, {
+        transports: ["websocket"],
+        auth: { userId: data.id },
+      });
+
+      socketRef.current.on("connect", () => {
+        console.log("CONNECTED");
+      });
+
+      await AsyncStorage.setItem('usuario_id', String(data.id));
       router.replace('/discover');
     })
     .catch(error => {
