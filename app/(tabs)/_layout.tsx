@@ -1,17 +1,33 @@
 import { Ionicons } from '@expo/vector-icons';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from "expo-router";
 
 export default function TabsLayout() {
   return(
     <>
       <Tabs screenOptions={{headerShown:false, tabBarStyle: {
-      height: 100, // ⬆️ Aumenta la altura
+      height: 110,
       // paddingBottom: 60, // 🧼 Espacio para íconos
       paddingTop: 10,
     },}}>
-        <Tabs.Screen name="discover" options={{ title: 'Descubrir', 
+        <Tabs.Screen name="home" options={{ title: 'Inicio', 
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home-outline" size={size} color={color} />
+          ),
+         }} />
+         <Tabs.Screen name="discover" options={{ title: 'Explorar', 
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="compass-outline" size={size} color={color} />
+          ),
+         }} />
+         <Tabs.Screen name="myAuctions" options={{ title: 'Mis Pujas', 
+          tabBarIcon: ({ color, size }) => (
+            <FontAwesome name="gavel" size={size} color={color} />
+          ),
+         }} />
+         <Tabs.Screen name="profile" options={{ title: 'Perfil', 
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person-outline" size={size} color={color} />
           ),
          }} />
         {/* <Tabs.Screen
