@@ -19,7 +19,7 @@ export default function Login() {
       const id = await AsyncStorage.getItem('usuario_id');
       console.log('USUARIO CONECTADO CON ID: ', id)
       if (id) {
-        router.replace('/discover');
+        router.replace('/home');
       }
     };
     checkUserId();
@@ -51,7 +51,7 @@ export default function Login() {
       });
 
       await AsyncStorage.setItem('usuario_id', String(data.id));
-      router.replace('/discover');
+      router.replace('/home');
     })
     .catch(error => {
       console.error('Error en login:', error);
