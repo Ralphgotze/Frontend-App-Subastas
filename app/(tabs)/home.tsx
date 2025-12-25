@@ -40,7 +40,7 @@ export default function Home() {
 
   const renderItem = ({ item } : {item:Auction}) => (
     <View style={styles.itemContainer}>
-      <Image style={styles.itemImage} source={{ uri: item.product.imageUrl }} />
+      <Image style={styles.itemImage} source={{ uri: item.product.imageUrls[0] }} />
       <View style={styles.itemInfo}>
         <View style={styles.itemTitleContainer}>
           <Text style={styles.itemTitle}>{item.product.title}</Text>
@@ -86,6 +86,7 @@ export default function Home() {
         <FlatList
           data={auctions}
           keyExtractor={(item) => item.id.toString()}
+          showsVerticalScrollIndicator={false}
           renderItem={renderItem}
         />
       )}

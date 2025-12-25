@@ -18,13 +18,51 @@ export const createStyles = () =>
     bidsContainer: {
       marginTop: 20,
       padding: 15,
-      backgroundColor: "#e7e7e7ff",
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      borderBottomWidth: 1,
+      backgroundColor: "#fff",
       borderColor: '#ccc',
       borderRadius: 10,
     },
+    BidsText: {
+      fontSize: 20,
+      fontWeight: 600,
+      marginBottom: 10,
+      color: COLORS.textColor
+    },
+    bidsInfoContainer: {
+      marginTop: 10,
+      padding: 15,
+      backgroundColor: "#f3f3f3ff",
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: '#eeeeeeff',
+      borderRadius: 15,
+    },
+    userImage: {
+      height: 50,
+      width: 50,
+      borderRadius: 25,
+      marginRight: 12,
+    },
+    bidTextContainer: {
+      flex: 1,
+      justifyContent: 'center',
+    },
+    bidUser: {
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    bidDate: {
+      fontSize: 12,
+      color: '#777',
+      marginTop: 2,
+    },
+    bidAmount: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: '#007bff',
+    },
+    
     mainImage: {
       borderTopRightRadius: 10,
       borderTopLeftRadius: 10,
@@ -47,7 +85,7 @@ export const createStyles = () =>
       marginHorizontal: 5,
     },
     infoContainer: {
-      height: 300,
+      flex: 1,
       marginTop: 20,
       backgroundColor: "#fff",
       borderWidth: 1, 
@@ -58,7 +96,7 @@ export const createStyles = () =>
     descriptionText: {
       fontSize: 20,
       fontWeight: 600,
-      marginBottom: 20,
+      marginBottom: 10,
       color: COLORS.textColor
     },
     productDescription: {
@@ -135,7 +173,7 @@ export const createStyles = () =>
       height: 45,
       borderWidth: 1,
       borderColor: '#ccc',
-      borderRadius: 8,
+      borderRadius: 10,
       paddingHorizontal: 10,
       marginBottom: 15,
     },
@@ -143,7 +181,7 @@ export const createStyles = () =>
     bidButton: {
       backgroundColor: '#7daaf5',
       height: 45,
-      borderRadius: 8,
+      borderRadius: 10,
       justifyContent: 'center',
       alignItems: 'center',
     },
