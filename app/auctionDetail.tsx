@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { FlatList, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState, useMemo } from 'react';
+import { ScrollView, Image, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { connectAuctionsSocket, joinAuctionSocket, leaveAuctionSocket, disconnectAuctionsSocket } from '@/src/sockets/auctions.socket';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import API_URL from '@/server_ip';
@@ -13,15 +13,17 @@ export default function AuctionDetail() {
   const { auctionId } = useLocalSearchParams<{ auctionId: string }>();
   const [amount, setAmount] = useState('');
   const [bids, setBids] = useState<Bids[]>([]);
-  const [auction, setAuctions] = useState<any>();
+  const [auction, setAuction] = useState<any>();
+  const lastBidAmount = bids.length ? Math.max(...bids.map(b => b.amount)) : 0;
+  const minBid = Math.max(auction?.product.initialPrice || 0, lastBidAmount);
 
   interface Bids {
     id: number;
-    amount: number,
-    auctionId: number,
-    userId: number,
-    createdAt: string,
-    updatedAt: string
+    amount: number;
+    auctionId: number;
+    userId: number;
+    createdAt: string;
+    updatedAt: string;
   }
 
   useEffect(() => {
@@ -31,7 +33,7 @@ export default function AuctionDetail() {
         if (!response.ok) throw new Error('Error al traer el auction');
         const data = await response.json();
         setBids(data.bids || []);
-        setAuctions(data || []);
+        setAuction(data);
       } catch (error) {
         console.error(error);
       }
@@ -41,7 +43,7 @@ export default function AuctionDetail() {
 
   useEffect(() => {
     if (!auctionId) return;
-     const connectSocket = async () => {
+    const connectSocket = async () => {
       const id = await AsyncStorage.getItem('usuario_id');
       if (!id) return;
 
@@ -49,8 +51,7 @@ export default function AuctionDetail() {
       const socket = connectAuctionsSocket(userId);
 
       socket.on('new-bid', (bid) => {
-        console.log('actualizado', bid);
-        setBids((prevBids) => [...prevBids, bid]);
+        setBids(prev => [bid, ...prev]);
         setAmount('');
       });
 
@@ -72,117 +73,114 @@ export default function AuctionDetail() {
   }, [auctionId]);
 
   const createBids = async () => {
-    const userId = await AsyncStorage.getItem('usuario_id');
-      fetch(`${API_URL}/auctions/create-bids`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          auctionId: Number(auctionId),
-          amount: Number(amount),
-          userId: Number(userId)
-        }),
-      })
-    .then(response => {
-      if (!response.ok) throw new Error('Puja incorrecta');
-        return response.json();
-    })
-    .catch(error => {
-      console.error('Error en crear puja:', error);
-    });
-  }
+    const bidValue = Number(amount);
+    if (!bidValue || bidValue < minBid) {
+      alert(`La puja debe ser al menos $${minBid}`);
+      return;
+    }
 
-  const renderItem = ({ item } : {item:Bids}) => {
-    return (
-      <View style={styles.bidsContainer}>
-        <View>
-          <Text>Usuario: {item.userId}</Text>
-          <Text>{timeAgo(item.createdAt)}</Text>
-        </View>
-        <View>
-          <Text>${item.amount}</Text>
-        </View>
-      </View>
-    )
-  }
+    const userId = await AsyncStorage.getItem('usuario_id');
+    fetch(`${API_URL}/auctions/create-bids`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        auctionId: Number(auctionId),
+        amount: bidValue,
+        userId: Number(userId),
+      }),
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Puja incorrecta');
+        return res.json();
+      })
+      .catch(err => console.error('Error en crear puja:', err));
+  };
 
   return (
     <SafeAreaView style={styles.container}>
+      <ScrollView 
+        contentContainerStyle={{ paddingBottom: 50 }}
+        showsVerticalScrollIndicator={false}
+        >
         <View>
-          <FlatList
-            data={bids}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={renderItem}
-            ListHeaderComponent={() => (
-              <View>
-              <Text>Subasta {auctionId}</Text>
-                <View style={styles.photoContainer}>
-                  <View>
-                    <Image style={styles.mainImage} source={{ uri: auction?.product.imageUrl }} />
-                  </View>
-                  <View style={styles.itemImagesContainer}>
-                    <Image style={styles.itemImage} source={{ uri: auction?.product.imageUrl }} />
-                    <Image style={styles.itemImage} source={{ uri: auction?.product.imageUrl }} />
-                    <Image style={styles.itemImage} source={{ uri: auction?.product.imageUrl }} />
-                    <Image style={styles.itemImage} source={{ uri: auction?.product.imageUrl }} />
-                  </View>
-                </View>
-                <View style={styles.infoContainer}>
-                  <Text style={styles.descriptionText}>Descripción</Text>
-                  <Text style={styles.productDescription}>{ auction?.product.description }</Text>
-                  <View style={styles.divider} />
+          <View style={styles.photoContainer}>
+            <Image style={styles.mainImage} source={{ uri: auction?.product.imageUrls[0] }} />
+            <View style={styles.itemImagesContainer}>
+              {auction?.product.imageUrls.slice(1).map((url:any, idx:number) => (
+                <Image key={idx} style={styles.itemImage} source={{ uri: url }} />
+              ))}
+            </View>
+          </View>
 
-                  <View style={styles.infoGrid}>
-                    <View style={styles.infoItem}>
-                      <Text style={styles.infoLabel}>Condición</Text>
-                      <Text style={styles.infoValue}>Excelente</Text>
-                    </View>
+          <View style={styles.infoContainer}>
+            <Text style={styles.descriptionText}>Descripción</Text>
+            <Text style={styles.productDescription}>{auction?.product.description}</Text>
+            <View style={styles.divider} />
 
-                    <View style={styles.infoItem}>
-                      <Text style={styles.infoLabel}>Categoría</Text>
-                      <Text style={styles.infoValue}>Relojes y Joyería</Text>
-                    </View>
-
-                    <View style={styles.infoItem}>
-                      <Text style={styles.infoLabel}>Precio inicial</Text>
-                      <Text style={styles.infoValue}>$1200</Text>
-                    </View>
-
-                    <View style={styles.infoItem}>
-                      <Text style={styles.infoLabel}>Vendedor</Text>
-                      <Text style={styles.infoValue}>Coleccionista Premium</Text>
-                    </View>
-                  </View>
-
-                </View>
+            <View style={styles.infoGrid}>
+              <View style={styles.infoItem}>
+                <Text style={styles.infoLabel}>Condición</Text>
+                <Text style={styles.infoValue}>{auction?.product.condition}</Text>
               </View>
-            )}
-            ListFooterComponent={(
-              <View style={styles.amountContainer}>
-                <View style={styles.currentBidContainer}>
-                  <Text style={styles.currentBidLabel}>Puja actual</Text>
-                  <Text style={styles.currentBidValue}>$2500</Text>
-                  <Text style={styles.currentBidCount}>24 pujas realizadas</Text>
-                </View>
 
-                <Text style={styles.yourBidLabel}>Tu puja (mínimo $2600)</Text>
-                <TextInput
-                  style={styles.bidInput}
-                  placeholder="2600"
-                  keyboardType="numeric"
-                  placeholderTextColor="#999"
-                  value={amount}
-                  onChangeText={setAmount}
-                />
-
-                <TouchableOpacity style={styles.bidButton} onPress={createBids}>
-                  <Text style={styles.bidButtonText}>Realizar Puja</Text>
-                </TouchableOpacity>
+              <View style={styles.infoItem}>
+                <Text style={styles.infoLabel}>Categoría</Text>
+                <Text style={styles.infoValue}>{auction?.product.category?.name}</Text>
               </View>
-            )}
-          />
+
+              <View style={styles.infoItem}>
+                <Text style={styles.infoLabel}>Precio inicial</Text>
+                <Text style={styles.infoValue}>${auction?.product.initialPrice}</Text>
+              </View>
+
+              <View style={styles.infoItem}>
+                <Text style={styles.infoLabel}>Vendedor</Text>
+                <Text style={styles.infoValue}>Coleccionista Premium</Text>
+              </View>
+            </View>
+          </View>
         </View>
-    </SafeAreaView >
+
+        <View style={styles.amountContainer}>
+          <View style={styles.currentBidContainer}>
+            <Text style={styles.currentBidLabel}>Puja actual</Text>
+            <Text style={styles.currentBidValue}>${lastBidAmount || auction?.product.initialPrice}</Text>
+            <Text style={styles.currentBidCount}>{bids.length} pujas realizadas</Text>
+          </View>
+
+          <Text style={styles.yourBidLabel}>Tu puja (mínimo ${minBid})</Text>
+          <TextInput
+            style={styles.bidInput}
+            placeholder={minBid.toString()}
+            keyboardType="numeric"
+            value={amount}
+            onChangeText={setAmount}
+          />
+
+          <TouchableOpacity style={styles.bidButton} onPress={createBids}>
+            <Text style={styles.bidButtonText}>Realizar Puja</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.bidsContainer}>
+          <Text style={styles.BidsText}>Historial de Pujas</Text>
+          {bids.map((item) => (
+            <View key={item.id} style={styles.bidsInfoContainer}>
+              <Image
+                style={styles.userImage}
+                source={require('../assets/images/user-bids.png')}
+              />
+
+              <View style={styles.bidTextContainer}>
+                <Text style={styles.bidUser}>Usuario: {item.userId}</Text>
+                <Text style={styles.bidDate}>{timeAgo(item.createdAt)}</Text>
+              </View>
+
+              <Text style={styles.bidAmount}>${item.amount}</Text>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }

@@ -1,3 +1,4 @@
+import { COLORS } from "@/constants/COLORS";
 import { StyleSheet } from "react-native";
 
 export const createStyles = () =>
@@ -122,12 +123,12 @@ export const createStyles = () =>
       flexDirection: 'row',
       alignItems: "center",
       justifyContent:"space-between",
-      marginVertical:5
+      marginVertical: 5
     },
     itemTitle: {
-      fontSize:20,
-      fontWeight:"bold",
-      color: "#000"
+      fontSize: 20,
+      fontWeight: "bold",
+      color: COLORS.textColor
     },
     itemTime: {
       color:"#a1a1a1"
